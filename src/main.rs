@@ -1,6 +1,6 @@
 mod env;
 mod state;
-mod verifications;
+mod mappings;
 
 use axum::Router;
 use tokio::net::TcpListener;
@@ -16,6 +16,7 @@ async fn main() {
     let state = state::AppState::from_env(&env).await;
 
     let app = Router::new()
+        .nest("/verifications", mappings::routes())
         .layer(CorsLayer::permissive())
         .with_state(state);
 

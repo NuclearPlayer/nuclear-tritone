@@ -1,11 +1,11 @@
 use sqlx::PgPool;
 
 #[derive(Clone)]
-pub struct VerificationRepository {
+pub struct MappingRepository {
     pool: PgPool,
 }
 
-impl VerificationRepository {
+impl MappingRepository {
     pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }

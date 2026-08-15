@@ -1,11 +1,11 @@
 use sqlx::postgres::PgPoolOptions;
 
 use crate::env::Env;
-use crate::verifications::VerificationRepository;
+use crate::mappings::MappingRepository;
 
 #[derive(Clone)]
 pub struct AppState {
-    pub verifications: VerificationRepository,
+    pub mappings: MappingRepository,
 }
 
 impl AppState {
@@ -17,7 +17,7 @@ impl AppState {
             .expect("Failed to connect to database");
 
         Self {
-            verifications: VerificationRepository::new(pool),
+            mappings: MappingRepository::new(pool),
         }
     }
 }
