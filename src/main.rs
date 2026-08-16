@@ -1,10 +1,8 @@
-mod env;
-mod state;
-mod mappings;
-
 use axum::Router;
 use tokio::net::TcpListener;
 use tower_http::cors::CorsLayer;
+
+use nuclear_tritone::{env, mappings, state};
 
 #[tokio::main]
 async fn main() {
