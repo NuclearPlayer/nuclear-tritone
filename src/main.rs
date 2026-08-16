@@ -16,7 +16,7 @@ async fn main() {
     let state = state::AppState::from_env(&env).await;
 
     let app = Router::new()
-        .nest("/verifications", mappings::routes())
+        .nest("/mappings", mappings::routes())
         .layer(CorsLayer::permissive())
         .with_state(state);
 
