@@ -21,9 +21,9 @@ impl MappingRepository {
         }
     }
 
-    pub fn in_memory() -> Self {
+    pub fn in_memory_with(initial: Vec<Mapping>) -> Self {
         Self {
-            storage: Arc::new(Storage::InMemory(RwLock::new(Vec::new()))),
+            storage: Arc::new(Storage::InMemory(RwLock::new(initial))),
         }
     }
 }

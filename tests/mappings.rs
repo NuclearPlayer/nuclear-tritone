@@ -4,6 +4,7 @@ use serde_json::{json, Value};
 use tower::ServiceExt;
 
 use nuclear_tritone::test_app;
+use nuclear_tritone::mappings::Mapping;
 
 fn json_request(method: &str, uri: &str, body: Value) -> Request<Body> {
     Request::builder()
@@ -16,7 +17,7 @@ fn json_request(method: &str, uri: &str, body: Value) -> Request<Body> {
 
 #[tokio::test]
 async fn put_mapping_with_valid_body_returns_201() {
-    let app = test_app();
+    let app = test_app().build();
 
     let response = app
         .oneshot(json_request("PUT", "/mappings", json!({
@@ -34,7 +35,7 @@ async fn put_mapping_with_valid_body_returns_201() {
 
 #[tokio::test]
 async fn put_mapping_with_missing_fields_returns_400() {
-    let app = test_app();
+    let app = test_app().build();
 
     let response = app
         .oneshot(json_request("PUT", "/mappings", json!({
@@ -48,7 +49,7 @@ async fn put_mapping_with_missing_fields_returns_400() {
 
 #[tokio::test]
 async fn top_returns_404_when_no_mappings_exist() {
-    let app = test_app();
+    let app = test_app().build();
 
     let response = app
         .oneshot(json_request("POST", "/mappings/top", json!({
@@ -64,7 +65,7 @@ async fn top_returns_404_when_no_mappings_exist() {
 
 #[tokio::test]
 async fn delete_mapping_returns_200() {
-    let app = test_app();
+    let app = test_app().build();
 
     let response = app
         .oneshot(json_request("DELETE", "/mappings", json!({
