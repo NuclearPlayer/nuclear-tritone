@@ -19,4 +19,6 @@ uuid = { version = "1.24.1", features = ["v4", "serde"] }
 [dev-dependencies]
 axum-test = "21.0.0"
 http-body-util = "0.1.5"
+testcontainers = "0.27"
+testcontainers-modules = { version = "0.15", features = ["postgres"] }
 tower = { version = "0.5.3", features = ["util"] }
