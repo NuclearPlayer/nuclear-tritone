@@ -30,4 +30,34 @@ async fn verify(
     }
 }
 
-async fn unverify() {}
+#[derive(serde::Deserialize)]
+struct UnverifyRequest {
+    artist: String,
+    title: String,
+    source: String,
+    author_id: String,
+}
+
+async fn unverify(
+    State(state): State<AppState>,
+    payload: Result<Json<UnverifyRequest>, JsonRejection>,
+) -> StatusCode {
+    let Ok(Json(request)) = payload else {
+        return StatusCode::BAD_REQUEST;
+    };
+
+    let result = state
+        .mappings
+        .delete(
+            &request.artist,
+            &request.title,
+            &request.source,
+            &request.author_id,
+        )
+        .await;
+
+    match result {
+        Ok(()) => StatusCode::OK,
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
+    }
+}

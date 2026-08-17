@@ -29,4 +29,27 @@ impl MappingRepository {
 
         Ok(())
     }
+
+    pub async fn delete(
+        &self,
+        artist: &str,
+        title: &str,
+        source: &str,
+        author_id: &str,
+    ) -> sqlx::Result<()> {
+        sqlx::query(
+            r#"
+            DELETE FROM "stream-mappings"
+            WHERE artist = $1 AND title = $2 AND source = $3 AND author_id = $4
+            "#,
+        )
+        .bind(artist)
+        .bind(title)
+        .bind(source)
+        .bind(author_id)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
 }
