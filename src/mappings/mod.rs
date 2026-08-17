@@ -1,10 +1,12 @@
 mod repository;
 mod routes;
+mod scoring;
 
 pub use repository::MappingRepository;
 pub use routes::routes;
+pub use scoring::{top_stream, TopStream};
 
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, sqlx::FromRow)]
 pub struct Mapping {
     pub artist: String,
     pub title: String,

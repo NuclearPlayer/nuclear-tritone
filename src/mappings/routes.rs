@@ -4,7 +4,7 @@ use axum::http::StatusCode;
 use axum::routing::{delete, post, put};
 use axum::{Json, Router};
 
-use super::Mapping;
+use super::{top_stream, Mapping, TopStream};
 use crate::state::AppState;
 
 pub fn routes() -> Router<AppState> {
@@ -14,7 +14,32 @@ pub fn routes() -> Router<AppState> {
         .route("/", delete(unverify))
 }
 
-async fn get_top() {}
+#[derive(serde::Deserialize)]
+struct TopStreamRequest {
+    artist: String,
+    title: String,
+    source: String,
+    author_id: Option<String>,
+}
+
+async fn get_top(
+    State(state): State<AppState>,
+    payload: Result<Json<TopStreamRequest>, JsonRejection>,
+) -> Result<Json<TopStream>, StatusCode> {
+    let Ok(Json(request)) = payload else {
+        return Err(StatusCode::BAD_REQUEST);
+    };
+
+    let mappings = state
+        .mappings
+        .find_all(&request.artist, &request.title, &request.source)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    top_stream(&mappings, request.author_id.as_deref())
+        .map(Json)
+        .ok_or(StatusCode::NOT_FOUND)
+}
 
 async fn verify(
     State(state): State<AppState>,
