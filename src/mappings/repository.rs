@@ -1,4 +1,5 @@
 use sqlx::PgPool;
+use uuid::Uuid;
 
 use super::Mapping;
 
@@ -55,7 +56,7 @@ impl MappingRepository {
         artist: &str,
         title: &str,
         source: &str,
-        author_id: &str,
+        author_id: Uuid,
     ) -> sqlx::Result<()> {
         sqlx::query(
             r#"

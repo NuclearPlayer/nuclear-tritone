@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use uuid::Uuid;
+
 use super::Mapping;
 
 #[derive(serde::Serialize)]
@@ -10,7 +12,7 @@ pub struct TopStream {
     pub self_verified: Option<bool>,
 }
 
-pub fn top_stream(mappings: &[Mapping], author_id: Option<&str>) -> Option<TopStream> {
+pub fn top_stream(mappings: &[Mapping], author_id: Option<Uuid>) -> Option<TopStream> {
     let authors_own = author_id.and_then(|author| {
         mappings.iter().find(|mapping| mapping.author_id == author)
     });

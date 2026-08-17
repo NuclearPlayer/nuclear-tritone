@@ -2,7 +2,7 @@ mod common;
 
 use serde_json::json;
 
-use common::setup;
+use common::{setup, user};
 use nuclear_tritone::mappings::Mapping;
 
 #[tokio::test]
@@ -12,7 +12,7 @@ async fn put_mapping_with_valid_body_returns_201() {
     app.server
         .put("/mappings")
         .json(&json!({
-            "author_id": "user-1",
+            "author_id": user(1),
             "artist": "Black Sabbath",
             "title": "War Pigs",
             "source": "youtube",
@@ -54,9 +54,9 @@ async fn top_returns_404_when_no_mappings_exist() {
 async fn top_returns_highest_scored_stream() {
     let app = setup().await;
     app.init_mappings(vec![
-        Mapping::new("Black Sabbath", "War Pigs", "youtube", "popular", "user-1"),
-        Mapping::new("Black Sabbath", "War Pigs", "youtube", "popular", "user-2"),
-        Mapping::new("Black Sabbath", "War Pigs", "youtube", "unpopular", "user-3"),
+        Mapping::new("Black Sabbath", "War Pigs", "youtube", "popular", user(1)),
+        Mapping::new("Black Sabbath", "War Pigs", "youtube", "popular", user(2)),
+        Mapping::new("Black Sabbath", "War Pigs", "youtube", "unpopular", user(3)),
     ]).await;
 
     app.server
@@ -78,10 +78,10 @@ async fn top_returns_highest_scored_stream() {
 async fn top_returns_authors_own_mapping_even_when_another_has_higher_score() {
     let app = setup().await;
     app.init_mappings(vec![
-        Mapping::new("Black Sabbath", "War Pigs", "youtube", "popular", "user-1"),
-        Mapping::new("Black Sabbath", "War Pigs", "youtube", "popular", "user-2"),
-        Mapping::new("Black Sabbath", "War Pigs", "youtube", "popular", "user-3"),
-        Mapping::new("Black Sabbath", "War Pigs", "youtube", "my-pick", "me"),
+        Mapping::new("Black Sabbath", "War Pigs", "youtube", "popular", user(1)),
+        Mapping::new("Black Sabbath", "War Pigs", "youtube", "popular", user(2)),
+        Mapping::new("Black Sabbath", "War Pigs", "youtube", "popular", user(3)),
+        Mapping::new("Black Sabbath", "War Pigs", "youtube", "my-pick", user(9)),
     ]).await;
 
     app.server
@@ -90,7 +90,7 @@ async fn top_returns_authors_own_mapping_even_when_another_has_higher_score() {
             "artist": "Black Sabbath",
             "title": "War Pigs",
             "source": "youtube",
-            "author_id": "me"
+            "author_id": user(9)
         }))
         .await
         .assert_status_ok()
@@ -109,13 +109,13 @@ async fn delete_mapping_removes_it_from_top_results() {
         "War Pigs",
         "youtube",
         "only-stream",
-        "user-1",
+        user(1),
     )]).await;
 
     app.server
         .delete("/mappings")
         .json(&json!({
-            "author_id": "user-1",
+            "author_id": user(1),
             "artist": "Black Sabbath",
             "title": "War Pigs",
             "source": "youtube"

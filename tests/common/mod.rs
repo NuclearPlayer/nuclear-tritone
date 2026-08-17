@@ -16,10 +16,14 @@ CREATE TABLE "stream-mappings" (
     title text NOT NULL,
     source text NOT NULL,
     stream_id text NOT NULL,
-    author_id text NOT NULL,
+    author_id uuid NOT NULL,
     created_at timestamptz NOT NULL DEFAULT now()
 );
 "#;
+
+pub fn user(n: u128) -> uuid::Uuid {
+    uuid::Uuid::from_u128(n)
+}
 
 pub struct TestApp {
     pub server: TestServer,

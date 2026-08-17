@@ -6,6 +6,8 @@ use axum::{Json, Router};
 
 use std::sync::Arc;
 
+use uuid::Uuid;
+
 use super::{top_stream, Mapping, TopStream, TrackKey};
 use crate::state::AppState;
 
@@ -21,7 +23,7 @@ struct TopStreamRequest {
     artist: String,
     title: String,
     source: String,
-    author_id: Option<String>,
+    author_id: Option<Uuid>,
 }
 
 async fn get_top(
@@ -47,7 +49,7 @@ async fn get_top(
 
     let mappings = mappings_for(&state, key).await?;
 
-    top_stream(&mappings, author_id.as_deref())
+    top_stream(&mappings, author_id)
         .map(Json)
         .ok_or(StatusCode::NOT_FOUND)
 }
@@ -61,7 +63,7 @@ async fn mappings_for(state: &AppState, key: TrackKey) -> Result<Arc<Vec<Mapping
         .mappings
         .find_all(&key.artist, &key.title, &key.source)
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(internal_error)?;
 
     let mappings = Arc::new(fetched);
 
@@ -82,8 +84,13 @@ async fn verify(
 
     match state.mappings.insert(&mapping).await {
         Ok(()) => StatusCode::CREATED,
-        Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        Err(error) => internal_error(error),
     }
+}
+
+fn internal_error(error: sqlx::Error) -> StatusCode {
+    tracing::error!(%error, "Database error");
+    StatusCode::INTERNAL_SERVER_ERROR
 }
 
 #[derive(serde::Deserialize)]
@@ -91,7 +98,7 @@ struct UnverifyRequest {
     artist: String,
     title: String,
     source: String,
-    author_id: String,
+    author_id: Uuid,
 }
 
 async fn unverify(
@@ -108,12 +115,12 @@ async fn unverify(
             &request.artist,
             &request.title,
             &request.source,
-            &request.author_id,
+            request.author_id,
         )
         .await;
 
     match result {
         Ok(()) => StatusCode::OK,
-        Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        Err(error) => internal_error(error),
     }
 }

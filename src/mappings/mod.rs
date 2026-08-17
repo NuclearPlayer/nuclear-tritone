@@ -1,3 +1,5 @@
+use uuid::Uuid;
+
 mod repository;
 mod routes;
 mod scoring;
@@ -19,7 +21,7 @@ pub struct Mapping {
     pub title: String,
     pub source: String,
     pub stream_id: String,
-    pub author_id: String,
+    pub author_id: Uuid,
 }
 
 impl Mapping {
@@ -28,14 +30,14 @@ impl Mapping {
         title: impl Into<String>,
         source: impl Into<String>,
         stream_id: impl Into<String>,
-        author_id: impl Into<String>,
+        author_id: Uuid,
     ) -> Self {
         Self {
             artist: artist.into(),
             title: title.into(),
             source: source.into(),
             stream_id: stream_id.into(),
-            author_id: author_id.into(),
+            author_id,
         }
     }
 }
