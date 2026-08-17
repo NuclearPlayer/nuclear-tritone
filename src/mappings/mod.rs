@@ -4,6 +4,7 @@ mod routes;
 pub use repository::MappingRepository;
 pub use routes::routes;
 
+#[derive(serde::Deserialize)]
 pub struct Mapping {
     pub artist: String,
     pub title: String,
