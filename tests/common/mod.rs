@@ -1,8 +1,13 @@
+use axum_test::TestServer;
 use sqlx::PgPool;
 use testcontainers::core::Mount;
 use testcontainers::runners::AsyncRunner;
 use testcontainers::{ContainerAsync, ImageExt};
 use testcontainers_modules::postgres::Postgres;
+
+use nuclear_tritone::app;
+use nuclear_tritone::mappings::{Mapping, MappingRepository};
+use nuclear_tritone::state::AppState;
 
 const SCHEMA: &str = r#"
 CREATE TABLE "stream-mappings" (
@@ -16,12 +21,41 @@ CREATE TABLE "stream-mappings" (
 );
 "#;
 
-pub struct TestDatabase {
-    pub pool: PgPool,
+pub struct TestApp {
+    pub server: TestServer,
+    mappings: MappingRepository,
     _container: ContainerAsync<Postgres>,
 }
 
-pub async fn setup() -> TestDatabase {
+pub async fn setup() -> TestApp {
+    let (pool, container) = setup_database().await;
+    let mappings = MappingRepository::new(pool);
+
+    let state = AppState {
+        mappings: mappings.clone(),
+    };
+
+    let server = TestServer::new(app(state));
+
+    TestApp {
+        server,
+        mappings,
+        _container: container,
+    }
+}
+
+impl TestApp {
+    pub async fn init_mappings(&self, mappings: Vec<Mapping>) {
+        for mapping in &mappings {
+            self.mappings
+                .insert(mapping)
+                .await
+                .expect("Failed to insert mapping");
+        }
+    }
+}
+
+async fn setup_database() -> (PgPool, ContainerAsync<Postgres>) {
     let container = Postgres::default()
         .with_tag("16-alpine")
         .with_mount(Mount::tmpfs_mount("/var/lib/postgresql/data"))
@@ -45,8 +79,5 @@ pub async fn setup() -> TestDatabase {
         .await
         .expect("Failed to create schema");
 
-    TestDatabase {
-        pool,
-        _container: container,
-    }
+    (pool, container)
 }

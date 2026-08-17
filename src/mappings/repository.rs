@@ -1,29 +1,32 @@
-use std::sync::{Arc, RwLock};
-
 use sqlx::PgPool;
 
 use super::Mapping;
 
-enum Storage {
-    Postgres(PgPool),
-    InMemory(RwLock<Vec<Mapping>>),
-}
-
 #[derive(Clone)]
 pub struct MappingRepository {
-    storage: Arc<Storage>,
+    pool: PgPool,
 }
 
 impl MappingRepository {
     pub fn new(pool: PgPool) -> Self {
-        Self {
-            storage: Arc::new(Storage::Postgres(pool)),
-        }
+        Self { pool }
     }
 
-    pub fn in_memory_with(initial: Vec<Mapping>) -> Self {
-        Self {
-            storage: Arc::new(Storage::InMemory(RwLock::new(initial))),
-        }
+    pub async fn insert(&self, mapping: &Mapping) -> sqlx::Result<()> {
+        sqlx::query(
+            r#"
+            INSERT INTO "stream-mappings" (artist, title, source, stream_id, author_id)
+            VALUES ($1, $2, $3, $4, $5)
+            "#,
+        )
+        .bind(&mapping.artist)
+        .bind(&mapping.title)
+        .bind(&mapping.source)
+        .bind(&mapping.stream_id)
+        .bind(&mapping.author_id)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
     }
 }

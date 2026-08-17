@@ -1,24 +1,15 @@
 mod common;
 
-use axum_test::TestServer;
 use serde_json::json;
 
+use common::setup;
 use nuclear_tritone::mappings::Mapping;
-use nuclear_tritone::test_app;
-
-fn server() -> TestServer {
-    TestServer::new(test_app().build())
-}
-
-fn server_with(mappings: Vec<Mapping>) -> TestServer {
-    TestServer::new(test_app().with_mappings(mappings).build())
-}
 
 #[tokio::test]
 async fn put_mapping_with_valid_body_returns_201() {
-    let server = server();
+    let app = setup().await;
 
-    server
+    app.server
         .put("/mappings")
         .json(&json!({
             "author_id": "user-1",
@@ -33,9 +24,9 @@ async fn put_mapping_with_valid_body_returns_201() {
 
 #[tokio::test]
 async fn put_mapping_with_missing_fields_returns_400() {
-    let server = server();
+    let app = setup().await;
 
-    server
+    app.server
         .put("/mappings")
         .json(&json!({
             "artist": "Black Sabbath"
@@ -46,9 +37,9 @@ async fn put_mapping_with_missing_fields_returns_400() {
 
 #[tokio::test]
 async fn top_returns_404_when_no_mappings_exist() {
-    let server = server();
+    let app = setup().await;
 
-    server
+    app.server
         .post("/mappings/top")
         .json(&json!({
             "artist": "Black Sabbath",
@@ -61,13 +52,14 @@ async fn top_returns_404_when_no_mappings_exist() {
 
 #[tokio::test]
 async fn top_returns_highest_scored_stream() {
-    let server = server_with(vec![
+    let app = setup().await;
+    app.init_mappings(vec![
         Mapping::new("Black Sabbath", "War Pigs", "youtube", "popular", "user-1"),
         Mapping::new("Black Sabbath", "War Pigs", "youtube", "popular", "user-2"),
         Mapping::new("Black Sabbath", "War Pigs", "youtube", "unpopular", "user-3"),
-    ]);
+    ]).await;
 
-    server
+    app.server
         .post("/mappings/top")
         .json(&json!({
             "artist": "Black Sabbath",
@@ -84,14 +76,15 @@ async fn top_returns_highest_scored_stream() {
 
 #[tokio::test]
 async fn top_returns_authors_own_mapping_even_when_another_has_higher_score() {
-    let server = server_with(vec![
+    let app = setup().await;
+    app.init_mappings(vec![
         Mapping::new("Black Sabbath", "War Pigs", "youtube", "popular", "user-1"),
         Mapping::new("Black Sabbath", "War Pigs", "youtube", "popular", "user-2"),
         Mapping::new("Black Sabbath", "War Pigs", "youtube", "popular", "user-3"),
         Mapping::new("Black Sabbath", "War Pigs", "youtube", "my-pick", "me"),
-    ]);
+    ]).await;
 
-    server
+    app.server
         .post("/mappings/top")
         .json(&json!({
             "artist": "Black Sabbath",
@@ -110,11 +103,16 @@ async fn top_returns_authors_own_mapping_even_when_another_has_higher_score() {
 
 #[tokio::test]
 async fn delete_mapping_removes_it_from_top_results() {
-    let server = server_with(vec![
-        Mapping::new("Black Sabbath", "War Pigs", "youtube", "only-stream", "user-1"),
-    ]);
+    let app = setup().await;
+    app.init_mappings(vec![Mapping::new(
+        "Black Sabbath",
+        "War Pigs",
+        "youtube",
+        "only-stream",
+        "user-1",
+    )]).await;
 
-    server
+    app.server
         .delete("/mappings")
         .json(&json!({
             "author_id": "user-1",
@@ -125,7 +123,7 @@ async fn delete_mapping_removes_it_from_top_results() {
         .await
         .assert_status_ok();
 
-    server
+    app.server
         .post("/mappings/top")
         .json(&json!({
             "artist": "Black Sabbath",

@@ -1,8 +1,6 @@
-use axum::Router;
 use tokio::net::TcpListener;
-use tower_http::cors::CorsLayer;
 
-use nuclear_tritone::{env, mappings, state};
+use nuclear_tritone::{app, env, state};
 
 #[tokio::main]
 async fn main() {
@@ -13,10 +11,7 @@ async fn main() {
 
     let state = state::AppState::from_env(&env).await;
 
-    let app = Router::new()
-        .nest("/mappings", mappings::routes())
-        .layer(CorsLayer::permissive())
-        .with_state(state);
+    let app = app(state);
 
     let listener = TcpListener::bind("0.0.0.0:3000")
         .await
