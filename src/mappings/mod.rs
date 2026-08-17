@@ -6,6 +6,13 @@ pub use repository::MappingRepository;
 pub use routes::routes;
 pub use scoring::{top_stream, TopStream};
 
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub struct TrackKey {
+    pub artist: String,
+    pub title: String,
+    pub source: String,
+}
+
 #[derive(serde::Deserialize, sqlx::FromRow)]
 pub struct Mapping {
     pub artist: String,

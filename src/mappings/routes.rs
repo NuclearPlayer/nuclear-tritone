@@ -4,7 +4,9 @@ use axum::http::StatusCode;
 use axum::routing::{delete, post, put};
 use axum::{Json, Router};
 
-use super::{top_stream, Mapping, TopStream};
+use std::sync::Arc;
+
+use super::{top_stream, Mapping, TopStream, TrackKey};
 use crate::state::AppState;
 
 pub fn routes() -> Router<AppState> {
@@ -30,15 +32,44 @@ async fn get_top(
         return Err(StatusCode::BAD_REQUEST);
     };
 
-    let mappings = state
+    let TopStreamRequest {
+        artist,
+        title,
+        source,
+        author_id,
+    } = request;
+
+    let key = TrackKey {
+        artist,
+        title,
+        source,
+    };
+
+    let mappings = mappings_for(&state, key).await?;
+
+    top_stream(&mappings, author_id.as_deref())
+        .map(Json)
+        .ok_or(StatusCode::NOT_FOUND)
+}
+
+async fn mappings_for(state: &AppState, key: TrackKey) -> Result<Arc<Vec<Mapping>>, StatusCode> {
+    if let Some(cached) = state.mapping_cache.get(&key) {
+        return Ok(cached);
+    }
+
+    let fetched = state
         .mappings
-        .find_all(&request.artist, &request.title, &request.source)
+        .find_all(&key.artist, &key.title, &key.source)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    top_stream(&mappings, request.author_id.as_deref())
-        .map(Json)
-        .ok_or(StatusCode::NOT_FOUND)
+    let mappings = Arc::new(fetched);
+
+    if !mappings.is_empty() {
+        state.mapping_cache.insert(key, Arc::clone(&mappings));
+    }
+
+    Ok(mappings)
 }
 
 async fn verify(

@@ -31,9 +31,7 @@ pub async fn setup() -> TestApp {
     let (pool, container) = setup_database().await;
     let mappings = MappingRepository::new(pool);
 
-    let state = AppState {
-        mappings: mappings.clone(),
-    };
+    let state = AppState::new(mappings.clone());
 
     let server = TestServer::new(app(state));
 
