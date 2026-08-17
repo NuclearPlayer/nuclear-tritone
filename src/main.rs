@@ -13,10 +13,11 @@ async fn main() {
 
     let app = app(state);
 
-    let listener = TcpListener::bind("0.0.0.0:3000")
+    let address = format!("0.0.0.0:{}", env.port);
+    let listener = TcpListener::bind(&address)
         .await
-        .expect("Failed to bind to port 3000");
+        .unwrap_or_else(|_| panic!("Failed to bind to {address}"));
 
-    tracing::info!("Listening on port 3000");
+    tracing::info!("Listening on {address}");
     axum::serve(listener, app).await.expect("Server error");
 }
